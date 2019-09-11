@@ -86,7 +86,7 @@ class DArray {
             swap(out, min);
         }
     }
-    //(N^2)/2 - the average
+    //(N^2)/2 - the average time
     public void insertionSort() {
         int out, in;
         for (out = 1; out < nElems; out++) {

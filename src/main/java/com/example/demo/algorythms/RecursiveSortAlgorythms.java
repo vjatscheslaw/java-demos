@@ -37,6 +37,13 @@ public class RecursiveSortAlgorythms {
 //        array.display();
         System.out.println(System.currentTimeMillis() - start);
 
+        array.populateArrayWithRandomValues();
+//        array.display();
+        start = System.currentTimeMillis();
+        array.runQuickSort3();
+//        array.display();
+        System.out.println(System.currentTimeMillis() - start);
+
     }
 }
 
@@ -154,7 +161,7 @@ class YArray {
         return leftPtr;
     }
 
-    public int partitionIt2(int left, int right, long pivot) {
+    public int partitionIt1(int left, int right, long pivot) {
         int leftPtr = left - 1;
         int rightPtr = right;
         while (true) {
@@ -170,7 +177,7 @@ class YArray {
     }
 
     //to be used together with medianOf3()
-    public int partitionIt3(int left, int right, long pivot) {
+    public int partitionIt2(int left, int right, long pivot) {
         int leftPtr = left;
         int rightPtr = right - 1;
         while (true) {
@@ -193,19 +200,26 @@ class YArray {
         recQuickSort1(left, right);
     }
 
-    //O(log(N)) and does not degrade to O(N^2)
+    //O(log(N)) and does not degrade to O(N^2), but does not work with subarrays of 3 and less elements,
+    // you need to have a cut threshold of 3
     public void runQuickSort2() {
         int left = 0;
         int right = nElems - 1;
         recQuickSort2(left, right);
     }
+    public void runQuickSort3() {
+        int left = 0;
+        int right = nElems - 1;
+        recQuickSort3(left, right);
+    }
+
 
     private void recQuickSort1(int left, int right) {
         if (right - left <= 0)
             return;
         else {
             long pivot = theArray[right];
-            int partition = partitionIt2(left, right, pivot);
+            int partition = partitionIt1(left, right, pivot);
             recQuickSort1(left, partition -1);
             recQuickSort1(partition + 1, right);
         }
@@ -217,9 +231,21 @@ class YArray {
                 manualSort(left, right);
         else {
             long pivot = medianOf3(left, right);
-            int partition = partitionIt3(left, right, pivot);
+            int partition = partitionIt2(left, right, pivot);
             recQuickSort2(left, partition -1);
             recQuickSort2(partition + 1, right);
+        }
+    }
+
+    private void recQuickSort3(int left, int right) {
+        int size = right - left + 1;
+        if (size < 10)
+            insertionSort(left, right);
+        else {
+            long pivot = medianOf3(left, right);
+            int partition = partitionIt2(left, right, pivot);
+            recQuickSort3(left, partition -1);
+            recQuickSort3(partition + 1, right);
         }
     }
 
@@ -229,6 +255,7 @@ class YArray {
         theArray[two] = temp;
     }
 
+    //For sorting an array of not more than 3 elements
     public void manualSort(int left, int right) {
         int size = right - left + 1;
         if(size <= 1)
@@ -260,6 +287,19 @@ class YArray {
             swap(center, right);
         swap(center, right-1);
         return theArray[right-1];
+    }
+
+    public void insertionSort(int left, int right) {
+        int out, in;
+        for (out = left + 1; out < right; out++) {
+            long temp = theArray[out];
+            in = out;
+            while (in > left && theArray[in-1] >= temp) {
+                theArray[in] = theArray[in-1];
+                in--;
+            }
+            theArray[in] = temp;
+        }
     }
 
 }
