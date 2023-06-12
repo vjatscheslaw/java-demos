@@ -1,93 +1,201 @@
 package com.example.demo.patterns.builder;
 
-// Порождающий шаблон проектирования. Отделяет конструирование сложного объекта от его представления
-// так, что в результате одного и того же процесса конструирования могут получаться разные представления.
+// Строитель - порождающий шаблон проектирования. Отделяет конструирование сложного объекта от его представления
+// так, что в результате одного и того же процесса конструирования могут получаться разные представления - GoF
 public class BuilderPattern {
 
-    public static void main(String[] args) {
+	// Абстрактное представление
+	abstract static class Vehicle {
+		private VehicleType vehicle;
+		private Category category;
+		private String manufacturer;
+		private Transmission transmission;
+		private int maxSpeed;
 
-        CarBuilder builder = new CarBuilder();
-        System.out.println(builder.buildMarke("BMW").buildSpeed(320).buildTransmission(Transmission.AUTO).build());
+		Vehicle(VehicleType vehicle, Category category, String manufacturer, Transmission transmission, int maxSpeed) {
+			this.setCategory(category);
+			this.setManufacturer(manufacturer);
+			this.setMaxSpeed(maxSpeed);
+			this.setTransmission(transmission);
+			this.setVehicle(vehicle);
+		}
 
-    }
-}
+		public VehicleType getVehicle() {
+			return vehicle;
+		}
 
-class Car {
+		public void setVehicle(VehicleType vehicle) {
+			this.vehicle = vehicle;
+		}
 
-    int speed;
-    Transmission t;
-    String marke;
+		public Category getCategory() {
+			return category;
+		}
 
-    public Car() {
-    }
+		public void setCategory(Category category) {
+			this.category = category;
+		}
 
-    public int getSpeed() {
-        return speed;
-    }
+		public String getManufacturer() {
+			return manufacturer;
+		}
 
-    public void setSpeed(int speed) {
-        this.speed = speed;
-    }
+		public void setManufacturer(String manufacturer) {
+			this.manufacturer = manufacturer;
+		}
 
-    public Transmission getT() {
-        return t;
-    }
+		public Transmission getTransmission() {
+			return transmission;
+		}
 
-    public void setT(Transmission t) {
-        this.t = t;
-    }
+		public void setTransmission(Transmission transmission) {
+			this.transmission = transmission;
+		}
 
-    public String getMarke() {
-        return marke;
-    }
+		public int getMaxSpeed() {
+			return maxSpeed;
+		}
 
-    public void setMarke(String marke) {
-        this.marke = marke;
-    }
+		public void setMaxSpeed(int maxSpeed) {
+			this.maxSpeed = maxSpeed;
+		}
 
-    @Override
-    public String toString() {
-        return "Car{" +
-                "speed=" + speed +
-                ", t=" + t +
-                ", marke='" + marke + '\'' +
-                '}';
-    }
-}
+		@Override
+		public String toString() {
+			return "" + vehicle + "{" + "max speed=" + maxSpeed + ", transmission type = " + transmission
+					+ ", manufacturer='" + manufacturer + "', category" + category + "}";
+		}
 
-enum Transmission {
-    MANUAL, AUTO
-}
+	}
 
+	// Конкретное представление
+	static class Car extends Vehicle {
+		public Car(VehicleType vehicle, Category category, String manufacturer, Transmission transmission,
+				int maxSpeed) {
+			super(vehicle, category, manufacturer, transmission, maxSpeed);
+		}
+	}
 
-class CarBuilder {
+	// Конкретное представление
+	static class Truck extends Vehicle {
+		public Truck(VehicleType vehicle, Category category, String manufacturer, Transmission transmission,
+				int maxSpeed) {
+			super(vehicle, category, manufacturer, transmission, maxSpeed);
+		}
+	}
 
-    String marke = "Zhighuli";
-    Transmission t = Transmission.MANUAL;
-    int speed = 120;
+	// Конкретное представление
+	static class Motorbike extends Vehicle {
+		public Motorbike(VehicleType vehicle, Category category, String manufacturer, Transmission transmission,
+				int maxSpeed) {
+			super(vehicle, category, manufacturer, transmission, maxSpeed);
+		}
+	}
 
-    CarBuilder buildMarke(String marke) {
-        this.marke = marke;
-        return this;
-    }
+	enum Transmission {
+		MANUAL, AUTOMATIC
+	}
 
-    CarBuilder buildTransmission(Transmission t) {
-        this.t = t;
-        return this;
-    }
+	enum Category {
+		A, B, C
+	}
 
-    CarBuilder buildSpeed(int speed) {
-        this.speed = speed;
-        return this;
-    }
+	enum VehicleType {
+		CAR, TRUCK, MOTORBIKE
+	}
 
-    Car build() {
-        Car car = new Car();
-        car.setMarke(marke);
-        car.setSpeed(speed);
-        car.setSpeed(speed);
-        return car;
-    }
+	// Абстрактный строитель
+	static abstract class VehicleBuilder {
+		abstract Vehicle build();
+	}
 
+	// Конкретный строитель
+	static class CarBuilder extends VehicleBuilder {
 
+		VehicleType vehicle = VehicleType.CAR;
+		Category category = Category.B;
+		String manufacturer = "LADA";
+		Transmission transmission = Transmission.MANUAL;
+		int maxSpeed = 120;
+
+		CarBuilder manufacturer(String manufacturer) {
+			this.manufacturer = manufacturer;
+			return this;
+		}
+
+		CarBuilder transmission(Transmission transmission) {
+			this.transmission = transmission;
+			return this;
+		}
+
+		CarBuilder maxSpeed(int speed) {
+			this.maxSpeed = speed;
+			return this;
+		}
+
+		@Override
+		Vehicle build() {
+			return new Car(this.vehicle, this.category, this.manufacturer, this.transmission, this.maxSpeed);
+		}
+	}
+
+	// Конкретный строитель
+	static class TruckBuilder extends VehicleBuilder {
+
+		VehicleType vehicle = VehicleType.TRUCK;
+		Category category = Category.C;
+		String manufacturer = "GAZelle";
+		Transmission transmission = Transmission.MANUAL;
+		int maxSpeed = 110;
+
+		TruckBuilder manufacturer(String manufacturer) {
+			this.manufacturer = manufacturer;
+			return this;
+		}
+
+		TruckBuilder transmission(Transmission transmission) {
+			this.transmission = transmission;
+			return this;
+		}
+
+		TruckBuilder maxSpeed(int speed) {
+			this.maxSpeed = speed;
+			return this;
+		}
+
+		@Override
+		Vehicle build() {
+			return new Truck(this.vehicle, this.category, this.manufacturer, this.transmission, this.maxSpeed);
+		}
+	}
+
+	// Конкретный строитель
+	static class MotorbikeBuilder extends VehicleBuilder {
+
+		VehicleType vehicle = VehicleType.MOTORBIKE;
+		Category category = Category.A;
+		String manufacturer = "BMW";
+		Transmission transmission = Transmission.AUTOMATIC;
+		int maxSpeed = 220;
+
+		MotorbikeBuilder manufacturer(String manufacturer) {
+			this.manufacturer = manufacturer;
+			return this;
+		}
+
+		MotorbikeBuilder transmission(Transmission transmission) {
+			this.transmission = transmission;
+			return this;
+		}
+
+		MotorbikeBuilder maxSpeed(int speed) {
+			this.maxSpeed = speed;
+			return this;
+		}
+
+		@Override
+		Vehicle build() {
+			return new Motorbike(this.vehicle, this.category, this.manufacturer, this.transmission, this.maxSpeed);
+		}
+	}
 }
