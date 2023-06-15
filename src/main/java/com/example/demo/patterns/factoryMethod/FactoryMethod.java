@@ -1,54 +1,54 @@
 package com.example.demo.patterns.factoryMethod;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.Locale;
 
-// порождающий шаблон проектирования, предоставляющий подклассам (дочерним классам) интерфейс
-// для создания экземпляров некоторого класса. В момент создания наследники могут определить,
-// какой класс создавать. Иными словами, данный шаблон делегирует создание объектов наследникам
-// родительского класса. Это позволяет использовать в коде программы не специфические классы,
+// Фабричный Метод (aka Virtual Constructor) порождающий шаблон проектирования, предоставляющий подклассам интерфейс
+// для создания экземпляров некоторого класса. В момент создания, наследники могут определить,
+// какой класс создавать. Иными словами, данный шаблон делегирует создание объектов потомкам
+// своего класса. Это позволяет использовать в коде программы не специфические классы,
 // а манипулировать абстрактными объектами на более высоком уровне.
 public class FactoryMethod {
 
-    public static void main(String[] args) {
-        WatchFactory factory = new RomanWatchFactory();
-        factory.createWatch().showTime();
-    }
+	static interface WatchFactory {
+		Watch createWatch(); // <-- Это Фабричный Метод. Он позволяет классу (WatchFactory) делегировать
+								// инстанцирование подклассам 
+	}
 
-}
+	static interface Watch {
+		String showTime(LocalDateTime time);
+	}
 
-interface Watch {
-    void showTime();
-}
+	static class ISOWatch implements Watch {
+		@Override
+		public String showTime(LocalDateTime time) {
+			return time.format(DateTimeFormatter.ISO_DATE_TIME);
+		}
+	}
 
-class DigitalWatch implements Watch {
-    @Override
-    public void showTime() {
-        System.out.println(new Date());
-    }
-}
-class RomeWatch implements Watch {
-    @Override
-    public void showTime() {
-        System.out.println("new Date()");
-    }
-}
+	static class GermanWatch implements Watch {
+		@Override
+		public String showTime(LocalDateTime time) {
+			return time.format(DateTimeFormatter.ofPattern("uuuu MMM dd \\ HH:mm:ss", Locale.GERMANY));
+		}
+	}
 
-interface WatchFactory {
-    Watch createWatch(); // <-- это фабричный метод
-}
+	static class ISOWatchFactory implements WatchFactory {
 
-class DigitalWatchFactory implements WatchFactory {
+		@Override
+		public Watch createWatch() {
+			return new ISOWatch();
+		}
+	}
 
-    @Override
-    public Watch createWatch() {
-        return new DigitalWatch();
-    }
-}
+	static class LocalTimeWatchFactory implements WatchFactory {
 
-class RomanWatchFactory implements WatchFactory {
+		@Override
+		public Watch createWatch() {
+			return new GermanWatch();
+		}
+	}
 
-    @Override
-    public Watch createWatch() {
-        return new RomeWatch();
-    }
 }
