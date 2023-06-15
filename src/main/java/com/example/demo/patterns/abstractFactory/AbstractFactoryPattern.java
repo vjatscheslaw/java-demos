@@ -1,162 +1,211 @@
 package com.example.demo.patterns.abstractFactory;
 
-//порождающий шаблон  предоставляет интерфейс для создания семейств взаимосвязанных или взаимозависимых объектов,
-// не специфицируя их конкретных классов. Шаблон реализуется созданием абстрактного класса Factory,
-// который представляет собой интерфейс для создания компонентов системы
-// (например, для оконного интерфейса он может создавать окна и кнопки).
-// Затем пишутся классы, реализующие этот интерфейс
+// Абстрактная Фабрика (Kit, Инструментарий) - порождающий шаблон; предоставляет интерфейс для создания семейств взаимосвязанных или взаимозависимых объектов,
+// не определяя их конкретных классов. 
+// Шаблон реализуется созданием двух иерархий типов - иерархия типов фабрик и иерархия типов продуктов. Абстрактный класс DeviceFactory
+// представляет собой Абстрактную Фабрику - интерфейс для создания компонентов системы разных семейств
+// (например, для оконного интерфейса он может создавать окна, кнопки и подсказки, что составляет семейство продуктов фабрики).
 public class AbstractFactoryPattern {
 
-    public static void main(String[] args) {
-        DeviceFactory factory = getDeviceFactoryByCountryCode("en");
-        factory.getTouchpad().track(15, 122);
-    }
+	public static enum Localization {
+		RU, EN
+	}
 
-    private static DeviceFactory getDeviceFactoryByCountryCode(String code) {
-        switch (code.toUpperCase()) {
-            case "RU" : return new RuDeviceFactory();
-            case "EN" : return new EnDeviceFactory();
-            default: return null;
-        }
-    }
-}
+	// В нашем примере, у нашей Абстрактной Фабрики будут две имплементации, каждая 
+	// из которых по-своему будет создавать объекты семейства продуктов своей Абстрактной фабрики.
+	public static DeviceFactory getDeviceFactoryByCountryCode(Localization countryCode) {
+		return switch (countryCode) {
+		case RU -> new RuDeviceFactory();
+		case EN -> new EnDeviceFactory();
+		default -> null;
+		};
+	}
+	
+	// В нашем примере, в семействе продуктов Абстрактной фабрики будет 3 члена - мышь, клавиатура, тачпад.
 
-interface Mouse {
-    void click();
-    void dblclick();
-    void scroll(int direction);
-}
+	// Член семейства продуктов фабрики
+	static interface Mouse {
+		void click();
 
-interface Keyboard {
-    void print();
-    void println();
-}
+		void dblclick();
 
-interface Touchpad {
-    void track(int deltaX, int deltaY);
-}
+		void scroll(int direction);
+		
+		String getDescription();
+	}
 
-interface DeviceFactory {
-    Mouse getMouse();
-    Keyboard getKeyboard();
-    Touchpad getTouchpad();
-}
+	// Член семейства продуктов фабрики
+	static interface Keyboard {
+		void type();
+		String getDescription();
+	}
 
-class EnMouse implements Mouse {
-    @Override
-    public void click() {
-        System.out.println("Mouse click");
-    }
+	// Член семейства продуктов фабрики
+	static interface Touchpad {
+		void track(int deltaX, int deltaY);
+		String getDescription();
+	}
 
-    @Override
-    public void dblclick() {
-        System.out.println("Mouse doubleclick");
-    }
+	// Абстрактная фабрика
+	// передоверяет создание объектов-продуктов своим подклассам - GoF
+	static interface DeviceFactory {
+		Mouse produceMouse(); // <-- Фабричный метод
 
-    @Override
-    public void scroll(int direction) {
-        if (direction > 0) System.out.println("Scroll up");
-        else if (direction < 0) System.out.println("Scroll down");
-        else System.out.println("No scrolling");
-    }
-}
+		Keyboard produceKeyboard(); // <-- Фабричный метод
 
-class EnKeyboard implements Keyboard {
+		Touchpad produceTouchpad(); // <-- Фабричный метод
+	}
 
-    @Override
-    public void print() {
-        System.out.print("Print");
-    }
+	// конкретная реализация продукта семейства
+	static class EnMouse implements Mouse {
+		@Override
+		public void click() {
+			System.out.println("Mouse click");
+		}
 
-    @Override
-    public void println() {
-        System.out.println("Print line");
-    }
-}
+		@Override
+		public void dblclick() {
+			System.out.println("Mouse doubleclick");
+		}
 
-class EnTouchpad implements Touchpad {
+		@Override
+		public void scroll(int direction) {
+			if (direction > 0)
+				System.out.println("Scroll up");
+			else if (direction < 0)
+				System.out.println("Scroll down");
+			else
+				System.out.println("No scrolling");
+		}
 
-    @Override
-    public void track(int deltaX, int deltaY) {
-        System.out.println("Moved: x:" + deltaX + " y:" + deltaY);
-    }
+		@Override
+		public String getDescription() {
+			return "Mouse";
+		}
+	}
 
-}
+	// конкретная реализация продукта семейства
+	static class EnKeyboard implements Keyboard {
 
-class RuMouse implements Mouse {
-    @Override
-    public void click() {
-        System.out.println("Клик мышкой");
-    }
+		@Override
+		public void type() {
+			System.out.print("Typing");
+		}
 
-    @Override
-    public void dblclick() {
-        System.out.println("Двойной клик мышкой");
-    }
+		@Override
+		public String getDescription() {
+			return "Keyboard";
+		}
+	}
 
-    @Override
-    public void scroll(int direction) {
-        if (direction > 0) System.out.println("Скролл вверх");
-        else if (direction < 0) System.out.println("Скролл вниз");
-        else System.out.println("Нет скроллинга");
-    }
-}
+	// конкретная реализация продукта семейства
+	static class EnTouchpad implements Touchpad {
 
-class RuKeyboard implements Keyboard {
+		@Override
+		public void track(int deltaX, int deltaY) {
+			System.out.println("Moved: x:" + deltaX + " y:" + deltaY);
+		}
 
-    @Override
-    public void print() {
-        System.out.print("Печать");
-    }
+		@Override
+		public String getDescription() {
+			return "Touchpad";
+		}
 
-    @Override
-    public void println() {
-        System.out.println("Печать строки");
-    }
-}
+	}
 
-class RuTouchpad implements Touchpad {
+	// конкретная реализация продукта семейства
+	static class RuMouse implements Mouse {
+		@Override
+		public void click() {
+			System.out.println("Клик мышкой");
+		}
 
-    @Override
-    public void track(int deltaX, int deltaY) {
-        System.out.println("Переместился: x:" + deltaX + " y:" + deltaY);
-    }
+		@Override
+		public void dblclick() {
+			System.out.println("Двойной клик мышкой");
+		}
 
-}
+		@Override
+		public void scroll(int direction) {
+			if (direction > 0)
+				System.out.println("Скролл вверх");
+			else if (direction < 0)
+				System.out.println("Скролл вниз");
+			else
+				System.out.println("Нет скроллинга");
+		}
 
-class EnDeviceFactory implements DeviceFactory {
+		@Override
+		public String getDescription() {
+			return "Мышь";
+		}
+	}
 
-    @Override
-    public Mouse getMouse() {
-        return new EnMouse();
-    }
+	// конкретная реализация продукта семейства
+	static class RuKeyboard implements Keyboard {
 
-    @Override
-    public Keyboard getKeyboard() {
-        return new EnKeyboard();
-    }
+		@Override
+		public void type() {
+			System.out.print("Нажатие клавиши");
+		}
 
-    @Override
-    public Touchpad getTouchpad() {
-        return new EnTouchpad();
-    }
-}
+		@Override
+		public String getDescription() {
+			return "Клавиатура";
+		}
 
+	}
 
-class RuDeviceFactory implements DeviceFactory {
+	// конкретная реализация продукта семейства
+	static class RuTouchpad implements Touchpad {
 
-    @Override
-    public Mouse getMouse() {
-        return new RuMouse();
-    }
+		@Override
+		public void track(int deltaX, int deltaY) {
+			System.out.println("Переместился: x:" + deltaX + " y:" + deltaY);
+		}
 
-    @Override
-    public Keyboard getKeyboard() {
-        return new RuKeyboard();
-    }
+		@Override
+		public String getDescription() {
+			return "Тачпад";
+		}
 
-    @Override
-    public Touchpad getTouchpad() {
-        return new RuTouchpad();
-    }
+	}
+
+	// конкретная фабрика
+	static class EnDeviceFactory implements DeviceFactory {
+
+		@Override
+		public Mouse produceMouse() {
+			return new EnMouse();
+		}
+
+		@Override
+		public Keyboard produceKeyboard() {
+			return new EnKeyboard();
+		}
+
+		@Override
+		public Touchpad produceTouchpad() {
+			return new EnTouchpad();
+		}
+	}
+	
+	// конкретная фабрика
+	static class RuDeviceFactory implements DeviceFactory {
+
+		@Override
+		public Mouse produceMouse() {
+			return new RuMouse();
+		}
+
+		@Override
+		public Keyboard produceKeyboard() {
+			return new RuKeyboard();
+		}
+
+		@Override
+		public Touchpad produceTouchpad() {
+			return new RuTouchpad();
+		}
+	}
 }
