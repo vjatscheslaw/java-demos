@@ -1,115 +1,114 @@
 package com.example.demo.patterns.singleton;
 
-//порождающий шаблон проектирования, гарантирующий, что в однопроцессном приложении
-// будет единственный экземпляр некоторого класса, и предоставляющий глобальную точку
+import java.util.concurrent.atomic.AtomicInteger;
+
+// Одиночка - порождающий шаблон проектирования. Гарантирует, что у класса
+// будет единственный экземпляр, и предоставляет глобальную точку
 // доступа к этому экземпляру.
 public class SingletonPattern {
+	
+	// Так как Синглтон это порождающий шаблон, то в данном примере, нас будет интересовать порождение.
+	// У каждой имплементации будет поле counter, которое будет хранить количество когда-либо созданных экземпляров.
+	// Клиентский код смотрите в тестовом классе.
 
-    public static void main(String[] args) {
+    //Потоконебезопасный
+	static class UnsafeSingleton {
+		private static AtomicInteger counter = new AtomicInteger(0);
+		private static UnsafeSingleton instance;
 
+		private UnsafeSingleton() {
+			counter.incrementAndGet();
+		}
 
-        Thread[] threads = new Thread[10000];
+		public static UnsafeSingleton getInstance() { // глобальная точка доступа - публичный статически метод
+			if (instance == null)
+				instance = new UnsafeSingleton();
+			return instance;
+		}
 
-        for (int i = 0; i < 1000; i++) {
-            threads[i] = new Thread(new R());
-            threads[i].start();
-        }
+		public static int getCount() {
+			return counter.get();
+		}
+	}
 
-        try {
-            for (int i = 0; i < 1000; i++) {
-                threads[i].join();
-            }
-        } catch (InterruptedException ie) {
-            ie.printStackTrace();
-        }
-        Singleton s = Singleton.getInstance();
-        System.out.println(s.getCount());
-    }
-}
+    //потокобезопасный, но с EAGER инициализацией
+	public static class SafeEagerSingleton {
+		private static AtomicInteger counter = new AtomicInteger(0);
+		private static SafeEagerSingleton instance = new SafeEagerSingleton();
 
-class R implements Runnable {
+		private SafeEagerSingleton() {
+			counter.incrementAndGet();
+		}
 
-    @Override
-    public void run() {
-        Singleton.getInstance();
-    }
-}
+		public static SafeEagerSingleton getInstance() { // глобальная точка доступа - публичный статически метод
+			return instance;
+		}
 
-//Потоконебезопасный
-class Singleton {
-    private static int counter = 0;
-    private static Singleton instance;
-    private Singleton() {
-        counter++;
-    }
+		public static int getCount() {
+			return counter.get();
+		}
+	}
 
-    public static Singleton getInstance() {
-        if (instance == null)
-            instance = new Singleton();
-        return instance;
-    }
+	// потокобезопасный, с LAZY инициализацией, блокировка на мониторе-объекте
+	// SafeLazySlowSingleton перед входом в synchronized
+	// требуется каждый раз при вызове метода getInstance().
+	public static class SafeLazySlowSingleton {
+		private static AtomicInteger counter = new AtomicInteger(0);
+		private static SafeLazySlowSingleton instance = null;
 
-    public int getCount() {
-        return counter;
-    }
-}
+		private SafeLazySlowSingleton() {
+			counter.incrementAndGet();
+		}
 
-//потокобезопасный, но с EAGER инициализацией
-class Singleton2 {
-    private static int counter = 0;
-    private static Singleton2 instance = new Singleton2();
-    private Singleton2() {
-        counter++;
-    }
+		public static synchronized SafeLazySlowSingleton getInstance() { // глобальная точка доступа - публичный статически метод
+			if (instance == null)
+				instance = new SafeLazySlowSingleton();
+			return instance;
+		}
 
-    public static Singleton2 getInstance() {
-        return instance;
-    }
+		public static int getCount() {
+			return counter.get();
+		}
+	}
 
-    public int getCount() {
-        return counter;
-    }
-}
+	// потокобезопасный, с LAZY инициализацией, блокировка на мониторе-объекте
+	// SafeLazyOptimizedSingleton перед
+	// входом в synchronized требуется единственный раз.
+	public static class SafeLazyOptimizedSingleton {
+		private static AtomicInteger counter = new AtomicInteger(0);
+		private static volatile SafeLazyOptimizedSingleton instance = null;
 
-//потокобезопасный, с LAZY инициализацией, но медленно работает, так как нам нужен synchronized
-//только один раз, а тут он каждый раз вызывается
-class Singleton3 {
-    private static int counter = 0;
-    private static Singleton3 instance = null;
-    private Singleton3() {
-        counter++;
-    }
+		private SafeLazyOptimizedSingleton() {
+			counter.incrementAndGet();
+		}
 
-    public static synchronized Singleton3 getInstance() {
-        if (instance == null)
-            instance = new Singleton3();
-        return instance;
-    }
+		public static SafeLazyOptimizedSingleton getInstance() { // глобальная точка доступа - публичный статически метод
+			if (instance == null)
+				synchronized (SafeLazyOptimizedSingleton.class) {
+					if (instance == null)
+						instance = new SafeLazyOptimizedSingleton();
+				}
+			return instance;
+		}
 
-    public int getCount() {
-        return counter;
-    }
-}
+		public static int getCount() {
+			return counter.get();
+		}
+	}
 
-//потокобезопасный, с LAZY инициализацией, но медленно работает, так как нам нужен synchronized
-//только один раз, а тут он каждый раз вызывается
-class Singleton4 {
-    private static int counter = 0;
-    private static volatile Singleton4 instance = null;
-    private Singleton4() {
-        counter++;
-    }
+	// потокобезопасный, с LAZY инициализацией, без блока synchronized
+	public enum EnumSingleton {
 
-    public static Singleton4 getInstance() {
-        if (instance == null)
-            synchronized (Singleton4.class) {
-            if (instance == null)
-                instance = new Singleton4();
-            }
-        return instance;
-    }
+		ENUM_SINGLETON();  // глобальная точка доступа
 
-    public int getCount() {
-        return counter;
-    }
+		private AtomicInteger counter = new AtomicInteger(0);
+
+		private EnumSingleton() {
+			counter.incrementAndGet();
+		}
+
+		public int getCount() {
+			return counter.get();
+		}
+	}
 }
