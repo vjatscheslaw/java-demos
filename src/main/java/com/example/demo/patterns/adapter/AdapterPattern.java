@@ -1,62 +1,62 @@
 package com.example.demo.patterns.adapter;
 
-import java.io.FileNotFoundException;
-
-// структурный шаблон проектирования, предназначенный для организации использования функций объекта,
-// недоступного для модификации, через специально созданный интерфейс. Другими словами —
-// это структурный паттерн проектирования, который позволяет объектам с несовместимыми интерфейсами работать вместе.
+// Адаптер (aka Wrapper, обёртка. Ага, прямо как в Декораторе) - структурный шаблон проектирования, который преобразует интерфейс одного класса
+// в интерфейс другого, который ожидают клиенты. Адаптер обеспечивает совместную работу классов с несовместимыми интерфейсами,
+// которая без него была бы невозможна. - GoF
 public class AdapterPattern {
 
-    public static void main(String[] args) throws FileNotFoundException {
-        VectorGraphicsInterface g1 = new VectorAdapterFromRaster();
-        g1.drawLine();
-        g1.drawSquare();
-        VectorGraphicsInterface g2 = new VectorAdapterFromRaster2();
-        g1.drawLine();
-        g1.drawSquare();
+	// В нашем примере, у нас будет наш собственный класс с API интерфейса
+	// VectorGraphicsInterface (для этого API написан наш клиентский код, его мы тоже не хотим менять)
+	// и класс воображаемой инструментальной библиотеки, в
+	// которой есть класс RasterGraphics, который мы,
+	// разумеется, не можем изменить (вообразим, что это JAR-файл).
+	static interface ModernInterface {
+		String printEzh(); // так называются эти функции в новом API
+		String printDezh(); // так называются эти функции в новом API
+	}
 
-    }
+	// класс из инструментальной библиотеки с устаревшим API, который нам
+	// нужно использовать (делегация вызовов) из классов с новым API
+	// (VectorGraphicsInterface)
+	static class OutdatedLibraryKit {
+		String printSymbolEzh() { // так называются эти функции в старом API нашей воображаемой инструментальной библиотеки
+			return new String(new char[]{'\u0293'});
+		}
 
-}
+		String printSymbolDezh() { // так называются эти функции в старом API нашей воображаемой инструментальной библиотеки
+			return new String(new char[]{'\u02A4'});
+		}
+	}
 
-interface VectorGraphicsInterface {
-    void drawLine();
-    void drawSquare();
-}
+	// Адаптация посредством наследования
+	static class ModernLibraryKit extends OutdatedLibraryKit implements ModernInterface {
 
-class RasterGraphics {
-    void drawRasterLine() {
-        System.out.println("Drawing a line");
-    }
-    void drawRasterSquare() {
-        System.out.println("Drawing a square");
-    }
-}
-//through Inheritance
-class VectorAdapterFromRaster extends RasterGraphics implements VectorGraphicsInterface {
+		@Override
+		public String printEzh() {
+			return printSymbolEzh();
+		}
 
-    @Override
-    public void drawLine() {
-        drawRasterLine();
-    }
+		@Override
+		public String printDezh() {
+			return printSymbolDezh();
+		}
+	}
 
-    @Override
-    public void drawSquare() {
-        drawRasterSquare();
-    }
-}
+	// Адаптация посредством композиции
+	static class ModernLibraryKit2 implements ModernInterface {
 
-//thorugh Composition
-class VectorAdapterFromRaster2 implements VectorGraphicsInterface {
+		OutdatedLibraryKit rg = new OutdatedLibraryKit(); // Композиция это такой вид агрегации, при котором жизненный цикл
+													// агрегируемого объекта ограничен длительностью жизненного цикла
+													// объекта-хозяина (агрегата)
 
-    RasterGraphics rg = new RasterGraphics();
-    @Override
-    public void drawLine() {
-        rg.drawRasterLine();
-    }
+		@Override
+		public String printEzh() {
+			return rg.printSymbolEzh();
+		}
 
-    @Override
-    public void drawSquare() {
-        rg.drawRasterSquare();
-    }
+		@Override
+		public String printDezh() {
+			return rg.printSymbolDezh();
+		}
+	}
 }
