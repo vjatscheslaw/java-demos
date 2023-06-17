@@ -2,136 +2,157 @@ package com.example.demo.patterns.mediator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-// поведенческий шаблон проектирования, обеспечивающий взаимодействие множества объектов,
+// Посредник (aka медиатор) - поведенческий шаблон проектирования, обеспечивающий взаимодействие множества объектов,
 // формируя при этом слабую связанность и избавляя объекты от необходимости явно ссылаться друг на друга.
 public class MediatorPattern {
 
-    public static void main(String[] args) {
+	// Интерфейс коллеги. Классы, взаимодействующие друг с другом посредством Посредника, принято называть Коллегами.
+	 static abstract class User {
+		Chat chat;
+		String name;
 
-        TextChat chat = new TextChat();
+		public User(Chat chat, String name) {
+			this.chat = chat;
+			this.name = name;
+		}
 
-        User admin = new Admin(chat, "AdMiN");
-        User user1 = new SimpleUser(chat, "Igor");
-        User user2 = new SimpleUser(chat, "Alex");
-        User user3 = new SimpleUser(chat, "Vasya");
+		public void sendMessage(String message) {
+			chat.sendMessage(message, this);
+		}
 
-        chat.setAdmin(admin);
-        chat.addUser(user1);
-        chat.addUser(user2);
-        chat.addUser(user3);
-        admin.sendMessage("ohoho");
-        user1.sendMessage("Привет");
-        user2.sendMessage("Zdorova");
-        user3.sendMessage("Привет");
-    }
+		abstract void getMessage(String message);
 
-}
+		String getName() {
+			return name;
+		}
 
-//интерфейс клиента
-abstract class User {
-    Chat chat;
-    String name;
+		@Override
+		public int hashCode() {
+			return Objects.hash(name);
+		}
 
-    public User(Chat chat, String name) {
-        this.chat = chat;
-        this.name = name;
-    }
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			User other = (User) obj;
+			return Objects.equals(name, other.name);
+		}
 
-    public void sendMessage(String message) {
-        chat.sendMessage(message, this);
-    }
+		@Override
+		public String toString() {
+			return "User [" + "name='" + name + '\'' + "']";
+		}
 
-    abstract void getMessage(String message);
+		protected abstract int getMessagesCount();
+	}
 
-    String getName() {
-        return name;
-    }
+	// Интерфейс посредника
+	interface Chat {
+		void sendMessage(String message, User user);
+	}
 
-    @Override
-    public String toString() {
-        return "User [" +
-                "name='" + name + '\'' +
-                "']";
-    }
-}
+	// Конкретный коллега
+	static class Admin extends User {
+		private int messagesCount = 0;
+		public Admin(Chat chat, String name) {
+			super(chat, name);
+		}
 
-//интерфейс посредника
-interface Chat {
-    void sendMessage(String message, User user);
-}
+		@Override
+		public void sendMessage(String message) {
+			this.messagesCount++;
+			chat.sendMessage(message, this);
+		}
 
-//конкретный клиент
-class Admin extends User {
+		@Override
+		public void getMessage(String message) {
+			this.messagesCount++;
+			System.out.println("Администратор " + getName() + " получил сообщение: '" + message + "'");
+		}
+		
+		@Override
+		public int getMessagesCount() {
+			return messagesCount;
+		}
+	}
 
-    public Admin(Chat chat, String name) {
-        super(chat, name);
-    }
+	// Конкретный коллега
+	static class SimpleUser extends User {
+		private int messagesCount = 0;
+		public SimpleUser(Chat chat, String name) {
+			super(chat, name);
+		}
 
-    @Override
-    public void sendMessage(String message) {
-        chat.sendMessage(message, this);
-    }
+		@Override
+		public void sendMessage(String message) {
+			this.messagesCount++;
+			chat.sendMessage(message, this);
+		}
 
-    @Override
-    public void getMessage(String message) {
-        System.out.println("Администратор " + getName() + " receives the message '" + message + "'");
-    }
-}
+		@Override
+		public void getMessage(String message) {
+			this.messagesCount++;
+			System.out.println("Пользователь " + getName() + " получил сообщение: '" + message + "'");
+		}
 
-//конкретный клиент
-class SimpleUser extends User {
-    public SimpleUser(Chat chat, String name) {
-        super(chat, name);
-    }
+		@Override
+		public int getMessagesCount() {
+			return messagesCount;
+		}
 
-    @Override
-    public void sendMessage(String message) {
-        chat.sendMessage(message, this);
-    }
+	}
 
-    @Override
-    public void getMessage(String message) {
-        System.out.println("Пользователь " + getName() + " receives a message '" + message + "'");
-    }
-}
+	// Конкретный посредник (Медиатор)
+	static class TextChat implements Chat {
+		User admin;
+		List<User> users = new ArrayList<>();
 
-//concrete Mediator
-class TextChat implements Chat {
-    User admin;
-    List<User> users = new ArrayList<>();
+		public void setAdmin(User admin) {
+			if (admin instanceof Admin a) {
+				this.admin = a;
+			} else {
+				throw new RuntimeException("Недостаточно прав");
+			}
+		}
 
-    public void setAdmin(User admin) {
-        if (admin instanceof Admin) {
-            this.admin = admin;
-        } else {
-            throw new RuntimeException("Not enough rights");
-        }
-    }
+		public void addUser(User u) {
+			if (admin == null) {
+				throw new RuntimeException("У паблика нет админа, который мог бы добавить пользователя");
+			} else if (u instanceof SimpleUser simp) {
+				users.add(simp);
+				System.out.println("Добавлен пользоваель");
+			} else if (u instanceof Admin a) {
+				users.add(a);
+				System.out.println("Добавлен администратор");
+			} else
+				throw new RuntimeException("Неизвестная роль");
+		}
 
-    public void addUser(User u) {
-        if (admin == null) {
-            throw new RuntimeException("No admin");
-        } else if (u instanceof SimpleUser)
-            users.add(u);
-        else throw new RuntimeException("Admin cannot enter the chat");
-    }
-
-    public void sendMessage(String message, User user) {
-        if (user instanceof Admin) {
-            for (User u : users) {
-                u.getMessage(user.getName() + ": " + message);
-            }
-        } else if (user instanceof SimpleUser) {
-            for (User u : users) {
-                if (u != user) {
-                    u.getMessage(user.getName() + ": " + message);
-                }
-
-            }
-            admin.getMessage(user.getName() + ": " + message);
-
-        }
-
-    }
+		// Паттерн Посредник локализует поведение, которое, в противном случае, пришлось бы распределять между несколькими объектами.
+		// Устраняет связанность между коллегами. Упрощает протоколы взаимодействия объектов - один посредник взаимодействует со всеми коллегами, 
+		// вместо того, чтобы все коллеги взаимодействовали со всеми коллегами. "Один ко многим" вместо "многие ко многим".
+		// Медиатор централизует управление - переносит сложность взаимодействия коллег в класс-посредник. 
+		// В результате, сам Посредник может стать монолитом, который трудно сопровождать - GoF
+		public void sendMessage(String message, User user) {
+			if (user instanceof Admin a) {
+				for (User u : users) {
+					u.getMessage(message + " от " + a.getName());
+				}
+			} else if (user instanceof SimpleUser simp) {
+				for (User u : users) {
+					if (!Objects.equals(u, simp)) {
+						u.getMessage(message + " от " + simp.getName());
+					}
+				}
+				admin.getMessage(message + " от " + simp.getName());
+			}
+		}
+	}
 }
