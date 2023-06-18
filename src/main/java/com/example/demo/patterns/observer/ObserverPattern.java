@@ -37,7 +37,15 @@ public class ObserverPattern {
 			o.unsubscribe(this);
 		}
 
-		public abstract void publish(String message);
+		public void publish(String message) {
+			this.observers.parallelStream()
+					.forEach(observer -> observer.messageBus
+							.push(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + " : "
+									+ this.getClass().getSimpleName() + " сообщает: " + message));
+			synchronized (this) {
+				this.notifyAll();
+			}
+		}
 
 		@Override
 		public int hashCode() {
@@ -58,64 +66,16 @@ public class ObserverPattern {
 	}
 
 	// Конкретный cубъект (издатель)
-	public static class ArchitectureTelegramChannel extends Publisher {
-
-		@Override
-		public void publish(String message) {
-			super.observers.parallelStream().forEach(observer -> observer.messageBus
-					.push(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + " : "
-							+ this.getClass().getSimpleName() + " сообщает: " + message));
-			synchronized (this) {
-				this.notifyAll();
-			}		
-		}
-
-	}
+	public static class ArchitectureTelegramChannel extends Publisher {}
 
 	// Конкретный cубъект (издатель)
-	public static class CoffeeTelegramChannel extends Publisher {
-
-		@Override
-		public void publish(String message) {
-			super.observers.parallelStream()
-					.forEach(observer -> observer.messageBus
-							.push(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + " : "
-									+ this.getClass().getSimpleName() + " сообщает: " + message));
-			synchronized (this) {
-				this.notifyAll();
-			}
-		}
-	}
+	public static class CoffeeTelegramChannel extends Publisher {}
 
 	// Конкретный cубъект (издатель)
-	public static class TravelTelegramChannel extends Publisher {
-
-		@Override
-		public void publish(String message) {
-			super.observers.parallelStream()
-					.forEach(observer -> observer.messageBus
-							.push(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + " : "
-									+ this.getClass().getSimpleName() + " сообщает: " + message));
-			synchronized (this) {
-				this.notifyAll();
-			}
-		}
-	}
+	public static class TravelTelegramChannel extends Publisher {}
 
 	// Конкретный cубъект (издатель)
-	public static class CatsTelegramChannel extends Publisher {
-
-		@Override
-		public void publish(String message) {
-			super.observers.parallelStream()
-					.forEach(observer -> observer.messageBus
-							.push(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + " : "
-									+ this.getClass().getSimpleName() + " сообщает: " + message));
-			synchronized (this) {
-				this.notifyAll();
-			}
-		}
-	}
+	public static class CatsTelegramChannel extends Publisher {}
 
 	// Observer - наблюдатель. Определяет интерфейс обновления для объектов, которые
 	// должны быть уведомлены об изменении субъекта. - GoF
