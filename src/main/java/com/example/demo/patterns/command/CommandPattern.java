@@ -1,91 +1,135 @@
 package com.example.demo.patterns.command;
 
-// поведенческий шаблон проектирования, используемый при объектно-ориентированном программировании,
-// представляющий действие. Объект команды заключает в себе само действие и его параметры.
+import java.util.ArrayDeque;
+
+// Команда (Command aka Action aka Transaction) - поведенческий шаблон проектирования. 
+// Инкапсулирует запрос как объект, позволяя тем самым задавать параметры клиентов для обработки соответствующих запросов, 
+// ставить запросы в очередь или протоколировать их, а также поддерживать отмену операций. - GoF
 public class CommandPattern {
 
-    public static void main(String[] args) {
-        Comp c = new Comp();
-        Enjoyker e = new Enjoyker(new StartCommand(c), new StopCommand(c), new ResetCommand(c));
-        e.startComputer();
-        e.resetComputer();
-        e.stopComputer();
-    }
+	// Команда
+	public static interface Command {
+		default void execute(Receiver r) { // Команде передаётся ссылка на конечного получателя
+			r.action(this); // что делать в ответ на полученную команду, знает получатель (Receiver).
+		}
 
-}
+		Receiver getReceiver();
 
-class Comp {
-    void start() {
-        System.out.println("start");
-    };
+		Command getOppositeForUndo();
+	}
 
-    void stop() {
-        System.out.println("stop");
-    };
+	// Получатель (aka Document, aka Application всмысле приложение команды) -
+	// располагает информацией о способах
+	// выполнения операций, необходимых для удовлетворения запроса. - GoF
+	public static interface Receiver {
+		void action(Command command); // метод получателя Команды, который эта Команда будет вызывать,
+		// передавая ему своё состояние. Получатель, в свою очередь, будет знать, как
+		// применить состояние конкретной Команды.
 
-    void reset() {
-        System.out.println("reset");
-    };
-}
+	}
 
-interface Command {
-    void execute();
-}
+	// Конкретный получатель команды.
+	public static class IntNumber implements Receiver {
+		private int value = 0;
 
+		@Override
+		public void action(Command command) {
+			if (command instanceof Summation sum)
+				this.value = this.value + sum.param();
+			else if (command instanceof Subtraction subtr)
+				this.value = this.value - subtr.param();
+			else if (command instanceof Multiplication mult)
+				this.value = this.value * mult.param();
+			else if (command instanceof Division div)
+				this.value = this.value / div.param();
+			else
+				throw new RuntimeException("Wrong command");
+		}
 
-class StartCommand implements Command {
-    Comp comp;
-    public StartCommand(Comp comp) {
-        this.comp = comp;
-    }
-    @Override
-    public void execute() {
-        comp.start();
-    }
-}
+		public int getValue() {
+			return value;
+		}
 
-class StopCommand implements Command {
-    Comp comp;
-    public StopCommand(Comp comp) {
-        this.comp = comp;
-    }
-    @Override
-    public void execute() {
-        comp.stop();
-    }
-}
+		public void setValue(int value) {
+			this.value = value;
+		};
+	}
 
-class ResetCommand implements Command {
-    Comp comp;
-    public ResetCommand(Comp comp) {
-        this.comp = comp;
-    }
-    @Override
-    public void execute() {
-        comp.reset();
-    }
-}
+	// Конкретная команда. Клиент присваивает команде состояние (в нашем примере это
+	// параметр param)
+	public static record Summation(int param, Receiver r) implements Command {
+		@Override
+		public Receiver getReceiver() {
+			return r;
+		}
 
+		@Override
+		public Command getOppositeForUndo() {
+			return new Subtraction(param, r);
+		}
+	}
 
-class Enjoyker {
-    Command start, stop, reset; //Отличается от Фасада тем, что тут один и тот же класс Command
+	// Конкретная команда.
+	public static record Subtraction(int param, Receiver r) implements Command {
+		@Override
+		public Receiver getReceiver() {
+			return r;
+		}
 
-    public Enjoyker(Command start, Command stop, Command reset) {
-        this.start = start;
-        this.stop = stop;
-        this.reset = reset;
-    }
+		@Override
+		public Command getOppositeForUndo() {
+			return new Summation(param, r);
+		}
+	}
 
-    void startComputer() {
-        start.execute();
-    }
+	// Конкретная команда.
+	public static record Multiplication(int param, Receiver r) implements Command {
+		@Override
+		public Receiver getReceiver() {
+			return r;
+		}
 
-    void stopComputer() {
-        stop.execute();
-    }
+		@Override
+		public Command getOppositeForUndo() {
+			return new Division(param, r);
+		}
+	}
 
-    void resetComputer() {
-        reset.execute();
-    }
+	// Конкретная команда.
+	public static record Division(int param, Receiver r) implements Command {
+		@Override
+		public Receiver getReceiver() {
+			return r;
+		}
 
+		@Override
+		public Command getOppositeForUndo() {
+			return new Multiplication(param, r);
+		}
+	}
+
+	// Инициатор - обращается к команде для выполнения запроса
+	public static class Invoker {
+		private ArrayDeque<Command> undoingStack = new ArrayDeque<>(); // поддержка отмены команд. Для Redo потребовался
+																		// бы второй стэк.
+
+		public Command undo() {
+			if (undoingStack.isEmpty())
+				return null;
+			else {
+				Command last = undoingStack.pop();
+				last.getOppositeForUndo().execute(last.getReceiver());
+				return last;
+			}
+		}
+
+		public void invoke(Command command, Receiver receiver) {
+			undoingStack.push(command);
+			command.execute(receiver);
+		}
+
+		public int stackSize() {
+			return this.undoingStack.size();
+		}
+	}
 }
